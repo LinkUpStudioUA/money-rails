@@ -38,6 +38,7 @@ module MoneyRails
       # For Mongoid
       begin; require 'mongoid'; require 'mongoid/version'; rescue LoadError; end
       if defined? ::Mongoid
+        require 'money-rails/active_model/money_amount_validator'
         if ::Mongoid::VERSION =~ /^2(.*)/
           require 'money-rails/mongoid/two' # Loading the file is enough
         else
