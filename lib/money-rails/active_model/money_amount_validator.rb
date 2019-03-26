@@ -35,11 +35,13 @@ module MoneyRails
 
       attr_reader :record, :attr_name
 
+      # WARNING: this is a dependency on **private** method!
+      #          gotta find a workaround
       define_method(NUMBER_PARSING_METHOD) do |raw_value|
         raw_value = cast_hash_to_money(raw_value) if raw_value.is_a?(Hash)
         return raw_value.amount if raw_value.is_a?(Money)
 
-        super
+        super(raw_value)
       end
 
       def cast_hash_to_money(hash)
@@ -59,3 +61,7 @@ module MoneyRails
     end
   end
 end
+
+# Compatibility with ActiveModel.validates method
+ActiveModel::Validations::MoneyAmountValidator =
+  MoneyRails::ActiveModel::MoneyAmountValidator

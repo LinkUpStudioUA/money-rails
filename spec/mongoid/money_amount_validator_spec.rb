@@ -3,12 +3,13 @@
 require 'spec_helper'
 
 if defined?(Mongoid)
-  describe MoneyRails::ActiveModel::MoneyAmountValidator, validations: true do
+  describe  MoneyRails::ActiveModel::MoneyAmountValidator,
+            mongoid_validations: true do
 
     it "is sane by default" do
       Priceable.validates :price, money_amount: true
-      invalid!(NIL + BLANK + JUNK)
-      valid!(FLOATS + INTEGERS + BIGDECIMAL + INFINITY)
+      invalid!(nils + blank + junk + infinity)
+      valid!(floats + integers + bigdecimal + money_objects + money_hashes)
     end
   end
 end

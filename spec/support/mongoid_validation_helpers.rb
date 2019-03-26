@@ -4,7 +4,7 @@
 # Heavily inspired by:
 # https://github.com/rails/rails/blob/v6.0.0.beta3/activemodel/test/cases/validations/numericality_validation_test.rb
 module MongoidValidationHelpers
-  NIL = [nil]
+  NILS = [nil]
   BLANK = ["", " ", " \t \r \n"]
   # 30 significant digits
   BIGDECIMAL_STRINGS = %w[12345678901234567890.1234567890]
@@ -22,21 +22,45 @@ module MongoidValidationHelpers
   ]
   INFINITY = [1.0 / 0.0]
 
-  # TODO: add contants like ONE_USD, ONE_EUR, ONE_USD_CENT, ONE_EUR_CENT,
-  #       MONEY_OBJECTS, MONEY_HASHES
+  ONE_USD = [Money.new(1_00, :usd)]
+  ONE_EUR = [Money.new(1_00, :eur)]
+  ONE_USD_CENT = [Money.new(1, :usd)]
+  ONE_EUR_CENT = [Money.new(1, :eur)]
+  MONEY_OBJECTS = ONE_USD + ONE_EUR + ONE_USD_CENT + ONE_EUR_CENT
+
+  ONE_USD_HASH = [{cents: 1_00, currency_iso: "USD"}]
+  ONE_EUR_HASH = [{cents: 1_00, currency_iso: "EUR"}]
+  ONE_USD_CENT_HASH = [{cents: 1, currency_iso: "USD"}]
+  ONE_EUR_CENT_HASH = [{cents: 1, currency_iso: "EUR"}]
+  MONEY_HASHES =  ONE_USD_HASH + ONE_EUR_HASH + ONE_USD_CENT_HASH +
+                  ONE_EUR_CENT_HASH
+
+  current_module = self
+  constants.each do |constant_name|
+    define_method(constant_name.to_s.downcase) do
+      current_module.const_get(constant_name)
+    end
+  end
 
   def invalid!(values, error = nil)
-    with_each_price_value(values) do |priceable|
-      expect(priceable).not_to be_invalid
+    with_each_price_value(values) do |priceable, inspected_value|
+      expect(priceable).to  be_invalid,
+                            "#{inspected_value} not rejected as a number"
       errors = priceable.errors[:price]
-      expect(errors).not_to be_empty
+      expect(errors).to be_any, "FAILED for #{inspected_value}"
       expect(errors.first).to eq(error) if error
     end
   end
 
   def valid!(values)
-    with_each_price_value(values) do |priceable|
-      exepect(priceable).to be_valid
+    with_each_price_value(values) do |priceable, inspected_value|
+      expect(priceable).to(
+        be_valid,
+        lambda do
+          "#{inspected_value} not accepted as a number with validation " \
+          "error: #{priceable.errors[:price].first}"
+        end
+      )
     end
   end
 
@@ -44,11 +68,11 @@ module MongoidValidationHelpers
     priceable = Priceable.new
     values.each do |value|
       priceable.price = value
-      yield priceable
+      yield priceable, value.inspect
     end
   end
 end
 
 RSpec.configure do |config|
-  config.include MongoidValidationHelpers, validations: true
+  config.include MongoidValidationHelpers, mongoid_validations: true
 end
